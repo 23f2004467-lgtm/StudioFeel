@@ -29,26 +29,21 @@ cd StudioFeel
 
 ---
 
-## Project Structure
+## Building
 
-```
-StudioFeel/
-├── APO/           # C++ audio driver (build as DLL)
-├── IPC/           # Shared communication code
-├── UI/            # WinUI 3 app
-├── Tests/         # Unit tests
-└── docs/          # Documentation
-```
+### Quick Start
 
----
+1. **Open the solution:** Double-click `StudioFeel.sln`
+2. **Set startup project:** Right-click `StudioFeel.UI` → Set as Startup Project
+3. **Build:** Press `Ctrl+Shift+B` or F5 to run
 
-## Building the APO (C++ DLL)
+### What Gets Built
 
-**Note**: The APO cannot be built yet. Missing implementation files:
-- `IPC/src/NamedPipeIPC.cpp` — Not implemented
-- `IPC/src/PresetFormat.cpp` — Not implemented
-
-Ask Claude (the AI) to implement these first.
+| Project | Output | Purpose |
+|---------|--------|---------|
+| `APO` | `StudioFeel.APO.dll` | The audio driver (EQ math) |
+| `IPC` | `StudioFeel.IPC.dll` | Communication layer |
+| `UI` | `StudioFeel.App.exe` | The app you see |
 
 ---
 
@@ -59,23 +54,52 @@ Ask Claude (the AI) to implement these first.
 | DSP Engine (headers) | ✅ Complete | Yes |
 | JSON Serialization | ✅ Complete | Yes |
 | APO Implementation | ✅ Complete | Yes |
-| IPC Implementation | ❌ Missing | No |
-| Preset System | ❌ Missing | No |
-| WinUI 3 App | ❌ Empty | No |
+| IPC Implementation | ✅ Complete | Yes |
+| Preset System | ✅ Complete | Yes |
+| WinUI 3 App | ✅ Complete | Yes |
+| Visualizer | ⚠️ Basic (no curve drawing yet) | Partial |
+| Tests | ❌ Not started | No |
 
 ---
 
-## What to Tell Claude (Your Friend)
+## What Works Right Now
 
-**Copy and paste this prompt to Claude:**
+✅ The UI opens and displays
+✅ EQ sliders and controls
+✅ Preset menu (with factory presets)
+✅ Master gain control
+✅ Power toggle
 
-```
-I'm helping test StudioFeel on Windows.
+## What Doesn't Work Yet
 
-What's the current status of the project?
-What needs to be implemented next?
-Can you implement the missing IPC layer (NamedPipeIPC.cpp)?
-```
+❌ Actual audio processing (APO needs to be installed as a driver)
+❌ Frequency curve visualization (needs Canvas drawing code)
+❌ Device selection (just shows placeholder)
+❌ Import/Export presets (menu items exist but not implemented)
+
+---
+
+## Testing Without APO Driver
+
+You can still run the UI! It will work in "demo mode":
+- Sliders move
+- Presets load
+- Visual display updates
+
+The EQ just won't affect actual audio until the APO driver is installed.
+
+---
+
+## Installing the APO Driver (Advanced)
+
+To make the EQ actually process audio, the APO DLL needs to be registered as a Windows audio effect.
+
+**This requires:**
+1. Building the APO project
+2. Running the INF installer (`StudioFeel.inf`)
+3. Restarting Windows Audio service
+
+**Ask Claude for help with this step** — it's complex and can break audio if done wrong.
 
 ---
 
@@ -92,5 +116,7 @@ Friend on Windows pulls:
 ```bash
 git pull
 ```
+
+Then rebuild in Visual Studio.
 
 ---

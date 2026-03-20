@@ -12,15 +12,18 @@ I'm helping test StudioFeel on Windows. Here's the context:
 PROJECT: StudioFeel — System-wide audio equalizer for Windows
 REPO: https://github.com/23f2004467-lgtm/StudioFeel
 
+Current status (as of latest commit):
+- IPC layer: ✅ Complete (NamedPipeIPC.cpp, IPCInterface.cpp)
+- Preset system: ✅ Complete (PresetFormat.cpp)
+- APO implementation: ✅ Complete (C++ audio driver)
+- WinUI 3 UI: ✅ Complete (Main page with EQ controls)
+- Visualizer: ⚠️ Basic (no curve drawing yet)
+- Tests: ❌ Not started
+
 I'm on Windows with Visual Studio 2022. My friend (the main developer) is on Mac and can't build/test.
 
-Please:
-1. Analyze the current codebase
-2. Tell me what's implemented vs missing
-3. Tell me what needs to be done next
-4. Help me implement the missing pieces so we can test
-
-Start by exploring the project structure and giving me a status report.
+What's the current status?
+What should I build/test first?
 ```
 
 **PROMPT END**
