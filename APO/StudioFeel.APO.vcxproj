@@ -110,11 +110,19 @@
     <ClInclude Include="src\DSPEngine.h" />
     <ClInclude Include="src\LockFreeQueue.h" />
     <ClInclude Include="src\StudioFeelAPO.h" />
+    <ClInclude Include="..\IPC\include\EQParameters.h" />
+    <ClInclude Include="..\IPC\include\IPCInterface.h" />
+    <ClInclude Include="..\IPC\include\NamedPipeIPC.h" />
+    <ClInclude Include="..\IPC\include\PresetFormat.h" />
   </ItemGroup>
 
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\StudioFeelAPO.cpp" />
+    <ClCompile Include="src\EQParameters.cpp" />
+    <ClCompile Include="src\NamedPipeIPC.cpp" />
+    <ClCompile Include="src\IPCInterface.cpp" />
+    <ClCompile Include="src\PresetFormat.cpp" />
   </ItemGroup>
 
   <ItemGroup>

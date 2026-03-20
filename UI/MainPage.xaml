@@ -51,6 +51,23 @@
                             <FontIcon Glyph="&#xE70D;" FontSize="12" Opacity="0.7"/>
                         </StackPanel>
                     </controls:DropDownButton.Content>
+                    <controls:DropDownButton.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutSubItem Text="Select Device">
+                                <MenuFlyout.Items>
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.AvailableDevices}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                                                <MenuFlyoutItem Text="{Binding FriendlyName}"
+                                                              Click="OnDeviceSelected"
+                                                              Tag="{Binding}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </MenuFlyout.Items>
+                            </MenuFlyoutSubItem>
+                        </MenuFlyout>
+                    </controls:DropDownButton.Flyout>
                 </controls:DropDownButton>
             </StackPanel>
 

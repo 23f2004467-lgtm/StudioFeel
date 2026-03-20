@@ -147,6 +147,15 @@ private:
     // Handle incoming IPC requests from the UI app
     std::string HandleIPCRequest(PipeMessageType type, const std::string& payload);
 
+    // Process individual parameter updates (e.g., band.0.gain)
+    std::string ProcessParameterUpdate(const std::string& key, const std::string& value);
+
+    // Save current configuration to property store
+    void SaveConfigurationToPropertyStore();
+
+    // Load configuration from property store
+    void LoadConfigurationFromPropertyStore();
+
     // ========================================================================
     // State
     // ========================================================================

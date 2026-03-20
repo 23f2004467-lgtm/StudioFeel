@@ -15,12 +15,12 @@ namespace StudioFeel
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        public MainViewModel ViewModel { get; }
+        public MainViewModel ViewModel { get; private set; } = null!;
 
         public MainPage()
         {
-            this.InitializeComponent();
             ViewModel = new MainViewModel();
+            this.InitializeComponent();
             DataContext = ViewModel;
 
             // Wire up the visualizer curve
@@ -71,6 +71,14 @@ namespace StudioFeel
                     FrequencyCurveCanvas.ActualWidth,
                     FrequencyCurveCanvas.ActualHeight
                 );
+            }
+        }
+
+        private void OnDeviceSelected(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is AudioDeviceInfo device)
+            {
+                ViewModel.SelectedDevice = device;
             }
         }
     }

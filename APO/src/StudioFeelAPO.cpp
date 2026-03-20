@@ -109,8 +109,7 @@ HRESULT STDMETHODCALLTYPE StudioFeelAPO::Initialize(UINT32 cbDataSize, BYTE* pby
 
     // Try to load configuration from property store
     if (m_propertyStore) {
-        // TODO: Read saved configuration from property store
-        // For now, use default flat configuration
+        LoadConfigurationFromPropertyStore();
     }
 
     m_dspEngine.Initialize(2, 48000, defaultConfig);
@@ -356,6 +355,172 @@ void StudioFeelAPO::InitializeIPCServer()
 }
 
 // ============================================================================
+// Internal: Save Configuration to Property Store
+// ============================================================================
+
+void StudioFeelAPO::SaveConfigurationToPropertyStore()
+{
+    if (!m_propertyStore) return;
+
+    // Get current configuration
+    const auto& config = m_dspEngine.GetCurrentConfig();
+
+    // Serialize to JSON
+    std::string json = Json::SerializeConfiguration(config);
+
+    // Convert to wide string
+    int wideLen = MultiByteToWideChar(CP_UTF8, 0, json.c_str(), -1, nullptr, 0);
+    if (wideLen <= 0) return;
+
+    std::vector<wchar_t> wideJson(wideLen);
+    MultiByteToWideChar(CP_UTF8, 0, json.c_str(), -1, wideJson.data(), wideLen);
+
+    // Store in the property store
+    // We use a custom property key format: {STUDIOFEEL_PROPERTYKEY_CATEGORY, PID_STUDIOFEEL_MASTER_ENABLED + 1}
+    // For full implementation, we'd use a better persistence strategy
+
+    // Create a property key for the full configuration
+    PROPERTYKEY key;
+    key.fmtid = STUDIOFEEL_PROPERTYKEY_CATEGORY;
+    key.pid = PID_STUDIOFEEL_MASTER_ENABLED + 100;  // Full config storage
+
+    PROPVARIANT variant = {};
+    variant.vt = VT_LPWSTR;
+    variant.pwszVal = wideJson.data();
+
+    // Attempt to save (may fail if property store is read-only)
+    PROPVARIANT variantOld = {};
+    m_propertyStore->GetValue(key.fmtid, key.pid, &variantOld);
+    m_propertyStore->SetValue(key.fmtid, key.pid, &variant);
+
+    PropVariantClear(&variantOld);
+    PropVariantClear(&variant);
+}
+
+// ============================================================================
+// Internal: Load Configuration from Property Store
+// ============================================================================
+
+void StudioFeelAPO::LoadConfigurationFromPropertyStore()
+{
+    if (!m_propertyStore) return;
+
+    // Try to read saved configuration
+    PROPERTYKEY key;
+    key.fmtid = STUDIOFEEL_PROPERTYKEY_CATEGORY;
+    key.pid = PID_STUDIOFEEL_MASTER_ENABLED + 100;  // Full config storage
+
+    PROPVARIANT variant = {};
+    HRESULT hr = m_propertyStore->GetValue(key.fmtid, key.pid, &variant);
+
+    if (SUCCEEDED(hr) && variant.vt == VT_LPWSTR && variant.pwszVal) {
+        // Convert wide string to narrow
+        int len = WideCharToMultiByte(CP_UTF8, 0, variant.pwszVal, -1, nullptr, 0, nullptr, nullptr);
+        if (len > 0) {
+            std::string json(len - 1, 0);
+            WideCharToMultiByte(CP_UTF8, 0, variant.pwszVal, -1, &json[0], len, nullptr, nullptr);
+
+            // Parse and apply
+            EQConfiguration savedConfig;
+            if (Json::DeserializeConfiguration(json, savedConfig)) {
+                m_dspEngine.UpdateFullConfiguration(savedConfig);
+            }
+        }
+        PropVariantClear(&variant);
+    }
+}
+
+// ============================================================================
+// Internal: Process Individual Parameter Updates
+// ============================================================================
+
+std::string StudioFeelAPO::ProcessParameterUpdate(const std::string& key, const std::string& value)
+{
+    // Parse the key and update the corresponding parameter
+    // Format: "master.enabled", "master.gain", "band.0.gain", etc.
+
+    if (key == "master.enabled") {
+        bool enabled = (value == "true" || value == "1");
+        auto config = m_dspEngine.GetCurrentConfig();
+        config.masterEnabled = enabled;
+        m_dspEngine.UpdateFullConfiguration(config);
+        SaveConfigurationToPropertyStore();
+        return "{}";
+    }
+
+    if (key == "master.gain") {
+        try {
+            float gain = std::stof(value);
+            auto config = m_dspEngine.GetCurrentConfig();
+            config.masterGainDb = gain;
+            m_dspEngine.UpdateFullConfiguration(config);
+            SaveConfigurationToPropertyStore();
+            return "{}";
+        } catch (...) {
+            return "{\"error\": \"Invalid gain value\"}";
+        }
+    }
+
+    // Band parameters: "band.N.param" where N is band index, param is property name
+    if (key.compare(0, 5, "band.") == 0) {
+        size_t secondDot = key.find('.', 5);
+        if (secondDot == std::string::npos) {
+            return "{\"error\": \"Invalid band key format\"}";
+        }
+
+        // Parse band index
+        int bandIndex = std::stoi(key.substr(5, secondDot - 5));
+        std::string paramName = key.substr(secondDot + 1);
+
+        auto config = m_dspEngine.GetCurrentConfig();
+        if (bandIndex < 0 || bandIndex >= static_cast<int>(config.bands.size())) {
+            return "{\"error\": \"Band index out of range\"}";
+        }
+
+        auto& band = config.bands[bandIndex];
+
+        if (paramName == "enabled") {
+            band.enabled = (value == "true" || value == "1");
+        }
+        else if (paramName == "gain") {
+            try {
+                band.gainDb = std::stof(value);
+            } catch (...) {
+                return "{\"error\": \"Invalid gain value\"}";
+            }
+        }
+        else if (paramName == "frequency") {
+            try {
+                band.frequency = std::stof(value);
+                band.frequency = std::clamp(band.frequency, 20.0f, 20000.0f);
+            } catch (...) {
+                return "{\"error\": \"Invalid frequency value\"}";
+            }
+        }
+        else if (paramName == "Q") {
+            try {
+                band.Q = std::stof(value);
+                band.Q = std::clamp(band.Q, 0.1f, 10.0f);
+            } catch (...) {
+                return "{\"error\": \"Invalid Q value\"}";
+            }
+        }
+        else if (paramName == "type") {
+            band.type = FilterTypeFromString(value);
+        }
+        else {
+            return "{\"error\": \"Unknown parameter name\"}";
+        }
+
+        m_dspEngine.UpdateFullConfiguration(config);
+        SaveConfigurationToPropertyStore();
+        return "{}";
+    }
+
+    return "{\"error\": \"Unknown key\"}";
+}
+
+// ============================================================================
 // Internal: Handle IPC Requests
 // ============================================================================
 
@@ -382,8 +547,58 @@ std::string StudioFeelAPO::HandleIPCRequest(PipeMessageType type,
         case PipeMessageType::SetParameter: {
             // Parse individual parameter update
             // Expected payload: {"key": "band.0.gain", "value": 6.0}
-            // TODO: Implement individual parameter parsing
-            return "{}";
+            // Supported keys:
+            //   - master.enabled
+            //   - master.gain
+            //   - band.N.enabled (N = 0-9)
+            //   - band.N.gain
+            //   - band.N.frequency
+            //   - band.N.Q
+            //   - band.N.type
+
+            // Simple JSON parsing for key/value
+            std::string key;
+            std::string valueStr;
+
+            // Extract key
+            size_t keyPos = payload.find("\"key\":");
+            if (keyPos == std::string::npos) return "{\"error\": \"Missing key\"}";
+            keyPos = payload.find("\"", keyPos + 6);
+            if (keyPos == std::string::npos) return "{\"error\": \"Invalid key format\"}";
+            size_t keyStart = keyPos + 1;
+            keyPos = payload.find("\"", keyStart);
+            if (keyPos == std::string::npos) return "{\"error\": \"Invalid key format\"}";
+            key = payload.substr(keyStart, keyPos - keyStart);
+
+            // Extract value (handle both strings and numbers)
+            size_t valuePos = payload.find("\"value\":");
+            if (valuePos == std::string::npos) return "{\"error\": \"Missing value\"}";
+
+            // Skip past "value":
+            valuePos += 7;
+
+            // Skip whitespace and colon
+            while (valuePos < payload.length() && (payload[valuePos] == ' ' || payload[valuePos] == '\t' || payload[valuePos] == ':')) {
+                valuePos++;
+            }
+
+            // Check if value is a string
+            if (valuePos < payload.length() && payload[valuePos] == '"') {
+                size_t valueStart = valuePos + 1;
+                size_t valueEnd = payload.find("\"", valueStart);
+                if (valueEnd == std::string::npos) return "{\"error\": \"Invalid value format\"}";
+                valueStr = payload.substr(valueStart, valueEnd - valueStart);
+            } else {
+                // Number - extract until comma or closing brace
+                size_t valueStart = valuePos;
+                while (valuePos < payload.length() && payload[valuePos] != ',' && payload[valuePos] != '}' && payload[valuePos] != ' ') {
+                    valuePos++;
+                }
+                valueStr = payload.substr(valueStart, valuePos - valueStart);
+            }
+
+            // Process the key/value pair
+            return ProcessParameterUpdate(key, valueStr);
         }
 
         default:

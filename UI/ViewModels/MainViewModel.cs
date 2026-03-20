@@ -101,6 +101,7 @@ namespace StudioFeel
         private IPC.IPCInterface? _ipc;
         private IPC.PresetManager? _presetManager;
         private IPC.EQConfiguration _currentConfig;
+        private AudioDeviceManager _deviceManager = new();
 
         // ========================================================================
         // Observable Properties (bound to UI)
@@ -119,6 +120,22 @@ namespace StudioFeel
         private string _selectedDeviceName = "Default Output";
 
         public ObservableCollection<BandViewModel> Bands { get; } = new();
+
+        public ObservableCollection<AudioDeviceInfo> AvailableDevices { get; } = new();
+
+        private AudioDeviceInfo? _selectedDevice;
+        public AudioDeviceInfo? SelectedDevice
+        {
+            get => _selectedDevice;
+            set
+            {
+                if (SetProperty(ref _selectedDevice, value) && value != null)
+                {
+                    SelectedDeviceName = value.FriendlyName;
+                    _ = Task.Run(() => SwitchToDeviceAsync(value));
+                }
+            }
+        }
 
         // Visualizer reference (set by MainPage)
         public Microsoft.UI.Xaml.Shapes.Polyline? EQCurve { get; set; }
@@ -180,8 +197,51 @@ namespace StudioFeel
 
         public void Start()
         {
-            // Initialize IPC connection to APO
-            Task.Run(async () => await InitializeIPCAsync());
+            // Enumerate audio devices
+            Task.Run(async () => await EnumerateDevicesAsync());
+        }
+
+        private async Task EnumerateDevicesAsync()
+        {
+            try
+            {
+                var devices = await _deviceManager.GetOutputDevicesAsync();
+
+                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                {
+                    AvailableDevices.Clear();
+                    foreach (var device in devices)
+                    {
+                        AvailableDevices.Add(device);
+                    }
+
+                    // Select the first device (default)
+                    if (AvailableDevices.Count > 0)
+                    {
+                        SelectedDevice = AvailableDevices[0];
+                    }
+                });
+
+                // Initialize IPC with selected device
+                if (_selectedDevice != null)
+                {
+                    await InitializeIPCAsync(_selectedDevice.EndpointId);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Device enumeration failed: {ex.Message}");
+            }
+        }
+
+        private async Task SwitchToDeviceAsync(AudioDeviceInfo device)
+        {
+            // Shutdown existing IPC connection
+            _ipc?.Shutdown();
+            _ipc = null;
+
+            // Initialize new connection
+            await InitializeIPCAsync(device.EndpointId);
         }
 
         public void Stop()
@@ -190,13 +250,10 @@ namespace StudioFeel
             _ipc?.Shutdown();
         }
 
-        private async Task InitializeIPCAsync()
+        private async Task InitializeIPCAsync(string endpointId)
         {
             try
             {
-                // TODO: Get actual endpoint ID from Windows audio API
-                string endpointId = "default";
-
                 _ipc = IPC.IPCInterface.Create();
 
                 // Try to connect (may fail if APO not installed yet)

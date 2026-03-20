@@ -27,12 +27,13 @@ namespace StudioFeel
         /// </summary>
         public void UpdateCurve(
             Polyline curve,
-            List<BandViewModel> bands,
+            List<BandViewModel>? bands,
             double masterGain,
             double canvasWidth,
             double canvasHeight)
         {
             if (curve == null || bands == null) return;
+            if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
             // Calculate frequency response at log-spaced points
             var points = new PointCollection();
@@ -187,10 +188,13 @@ namespace StudioFeel
         /// Draw grid lines for frequency and dB markers.
         /// </summary>
         public void DrawGrid(
-            Canvas canvas,
+            Canvas? canvas,
             double canvasWidth,
             double canvasHeight)
         {
+            if (canvas == null) return;
+            if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
             canvas.Children.Clear();
 
             // Draw 0dB line (center)
