@@ -76,6 +76,14 @@ namespace StudioFeel
 
             try
             {
+                // Validate file size to prevent OOM attacks (max 1MB)
+                var properties = await file.GetBasicPropertiesAsync();
+                if (properties.Size > 1024 * 1024)
+                {
+                    System.Diagnostics.Debug.WriteLine("Preset file too large (> 1MB)");
+                    return false;
+                }
+
                 // Read file
                 string json = await Windows.Storage.FileIO.ReadTextAsync(file);
 

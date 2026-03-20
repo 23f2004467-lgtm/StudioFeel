@@ -309,25 +309,44 @@ namespace StudioFeel
         {
             MasterGainDisplay = $"{value:F1} dB";
 
-            // Send to APO
-            Task.Run(async () =>
+            // Send to APO (fire-and-forget with error handling)
+            _ = SendMasterGainAsync(value);
+        }
+
+        private async Task SendMasterGainAsync(double value)
+        {
+            try
             {
-                if (_ipc != null && _ipc.IsConnected())
+                if (_ipc?.IsConnected() == true)
                 {
                     await Task.Run(() => _ipc.SetParameter("master.gain", value.ToString("F1")));
                 }
-            });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to send gain: {ex.Message}");
+            }
         }
 
         partial void OnIsEQEnabledChanged(bool value)
         {
-            Task.Run(async () =>
+            // Send to APO (fire-and-forget with error handling)
+            _ = SendEQEnabledAsync(value);
+        }
+
+        private async Task SendEQEnabledAsync(bool value)
+        {
+            try
             {
-                if (_ipc != null && _ipc.IsConnected())
+                if (_ipc?.IsConnected() == true)
                 {
                     await Task.Run(() => _ipc.SetParameter("master.enabled", value.ToString().ToLower()));
                 }
-            });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to send enabled state: {ex.Message}");
+            }
         }
 
         // ========================================================================

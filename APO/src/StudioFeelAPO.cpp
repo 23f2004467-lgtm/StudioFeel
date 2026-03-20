@@ -373,7 +373,8 @@ void StudioFeelAPO::SaveConfigurationToPropertyStore()
     if (wideLen <= 0) return;
 
     std::vector<wchar_t> wideJson(wideLen);
-    MultiByteToWideChar(CP_UTF8, 0, json.c_str(), -1, wideJson.data(), wideLen);
+    int result = MultiByteToWideChar(CP_UTF8, 0, json.c_str(), -1, wideJson.data(), wideLen);
+    if (result != wideLen) return;
 
     // Store in the property store
     // We use a custom property key format: {STUDIOFEEL_PROPERTYKEY_CATEGORY, PID_STUDIOFEEL_MASTER_ENABLED + 1}
@@ -384,17 +385,22 @@ void StudioFeelAPO::SaveConfigurationToPropertyStore()
     key.fmtid = STUDIOFEEL_PROPERTYKEY_CATEGORY;
     key.pid = PID_STUDIOFEEL_MASTER_ENABLED + 100;  // Full config storage
 
+    // Allocate string with CoTaskMemAlloc (required for VT_LPWSTR in PROPVARIANT)
+    PWSTR persistentStr = nullptr;
+    HRESULT hr = SHStrDupW(wideJson.data(), &persistentStr);
+    if (FAILED(hr) || !persistentStr) return;
+
     PROPVARIANT variant = {};
     variant.vt = VT_LPWSTR;
-    variant.pwszVal = wideJson.data();
+    variant.pwszVal = persistentStr;
 
     // Attempt to save (may fail if property store is read-only)
     PROPVARIANT variantOld = {};
     m_propertyStore->GetValue(key.fmtid, key.pid, &variantOld);
     m_propertyStore->SetValue(key.fmtid, key.pid, &variant);
 
-    PropVariantClear(&variantOld);
-    PropVariantClear(&variant);
+    PropVariantClear(&variantOld);  // Frees old value
+    PropVariantClear(&variant);     // Frees persistentStr
 }
 
 // ============================================================================

@@ -196,7 +196,11 @@ public:
     STDMETHOD_(ULONG, AddRef)()  override { return InterlockedIncrement(&m_refCount); }
     STDMETHOD_(ULONG, Release)() override {
         ULONG ref = InterlockedDecrement(&m_refCount);
-        if (ref == 0) delete this;
+        if (ref == 0) {
+            // Ensure all memory operations complete before deletion
+            std::atomic_thread_fence(std::memory_order_acquire);
+            delete this;
+        }
         return ref;
     }
     STDMETHOD(QueryInterface)(REFIID riid, void** ppv) override {

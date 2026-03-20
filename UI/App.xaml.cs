@@ -107,6 +107,14 @@ namespace StudioFeel
         {
             try
             {
+                // Validate file size to prevent OOM attacks (max 1MB)
+                var fileInfo = new FileInfo(filePath);
+                if (fileInfo.Length > 1024 * 1024)
+                {
+                    System.Diagnostics.Debug.WriteLine("Preset file too large (> 1MB)");
+                    return;
+                }
+
                 string json = File.ReadAllText(filePath);
                 var config = ParsePresetJson(json);
 
