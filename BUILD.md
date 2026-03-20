@@ -57,8 +57,10 @@ cd StudioFeel
 | IPC Implementation | ✅ Complete | Yes |
 | Preset System | ✅ Complete | Yes |
 | WinUI 3 App | ✅ Complete | Yes |
-| Visualizer | ⚠️ Basic (no curve drawing yet) | Partial |
-| Tests | ❌ Not started | No |
+| Visualizer | ✅ Complete | Yes |
+| Device Enumeration | ✅ Complete | Yes |
+| Import/Export | ✅ Complete | Yes |
+| Tests | ✅ Complete | Yes |
 
 ---
 
@@ -66,27 +68,32 @@ cd StudioFeel
 
 ✅ The UI opens and displays
 ✅ EQ sliders and controls
-✅ Preset menu (with factory presets)
+✅ Real-time frequency response curve
+✅ 10 factory presets (Flat, Bass Boost, Treble Boost, Voice Clarity, Pop, Rock, Classical, Gaming, Cinema, Podcast)
 ✅ Master gain control
 ✅ Power toggle
-
-## What Doesn't Work Yet
-
-❌ Actual audio processing (APO needs to be installed as a driver)
-❌ Frequency curve visualization (needs Canvas drawing code)
-❌ Device selection (just shows placeholder)
-❌ Import/Export presets (menu items exist but not implemented)
+✅ Curve updates when you move sliders
+✅ All filter types (Peaking, Low/High Shelf, Low/Highpass, Notch)
+✅ Export settings to .studiofeel file
+✅ Import settings from .studiofeel file
 
 ---
 
-## Testing Without APO Driver
+## What Doesn't Work Yet
 
-You can still run the UI! It will work in "demo mode":
-- Sliders move
-- Presets load
-- Visual display updates
+❌ Actual audio processing (APO needs to be installed as a system driver)
+❌ Device switching (enumeration works but switching not wired up)
 
-The EQ just won't affect actual audio until the APO driver is installed.
+---
+
+## Testing
+
+Run the unit tests:
+```powershell
+dotnet test Tests/StudioFeel.Tests/StudioFeel.Tests.csproj
+```
+
+Or from Visual Studio: Test → Run All Tests
 
 ---
 
