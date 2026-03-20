@@ -49,9 +49,28 @@ namespace StudioFeel
         [ObservableProperty]
         private string _gainDisplay = "0.0 dB";
 
+        // Action to notify when band changes (for visualizer update)
+        public Action? BandChanged { get; set; }
+
         partial void OnGainChanged(double value)
         {
             GainDisplay = $"{value:F1} dB";
+            BandChanged?.Invoke();
+        }
+
+        partial void OnEnabledChanged(bool value)
+        {
+            BandChanged?.Invoke();
+        }
+
+        partial void OnFrequencyChanged(double value)
+        {
+            BandChanged?.Invoke();
+        }
+
+        partial void OnQChanged(double value)
+        {
+            BandChanged?.Invoke();
         }
 
         partial void OnTypeIndexChanged(int value)
@@ -66,6 +85,7 @@ namespace StudioFeel
                 5 => "Notch",
                 _ => "Peaking"
             };
+            BandChanged?.Invoke();
         }
     }
 
@@ -99,6 +119,42 @@ namespace StudioFeel
         private string _selectedDeviceName = "Default Output";
 
         public ObservableCollection<BandViewModel> Bands { get; } = new();
+
+        // Visualizer reference (set by MainPage)
+        public Microsoft.UI.Xaml.Shapes.Polyline? EQCurve { get; set; }
+
+        private VisualizerViewModel _visualizer = new();
+
+        // Action to trigger curve update
+        private Action? _updateCurveAction;
+
+        /// <summary>
+        /// Updates the frequency response curve on the visualizer.
+        /// Call this after any EQ change.
+        /// </summary>
+        public void UpdateCurve(double canvasWidth, double canvasHeight)
+        {
+            if (EQCurve != null)
+            {
+                _visualizer.UpdateCurve(EQCurve, Bands.ToList(), MasterGain, canvasWidth, canvasHeight);
+            }
+        }
+
+        /// <summary>
+        /// Request a curve update (called from bands when they change)
+        /// </summary>
+        public void RequestCurveUpdate()
+        {
+            _updateCurveAction?.Invoke();
+        }
+
+        /// <summary>
+        /// Set the action that updates the curve (called by MainPage)
+        /// </summary>
+        public void SetUpdateCurveAction(Action action)
+        {
+            _updateCurveAction = action;
+        }
 
         // ========================================================================
         // Constructor
@@ -174,7 +230,7 @@ namespace StudioFeel
 
             for (int i = 0; i < frequencies.Length; i++)
             {
-                Bands.Add(new BandViewModel
+                var band = new BandViewModel
                 {
                     _index = i,
                     Enabled = true,
@@ -185,7 +241,10 @@ namespace StudioFeel
                     Q = 1.0,
                     Gain = 0.0,
                     GainDisplay = "0.0 dB"
-                });
+                };
+                // Wire up band changes to curve updates
+                band.BandChanged = () => RequestCurveUpdate();
+                Bands.Add(band);
             }
         }
 
@@ -265,13 +324,18 @@ namespace StudioFeel
 
         private async Task LoadPresetAsync(string presetId)
         {
-            // TODO: Load from PresetManager
-            // For now, just apply known presets
             IPC.EQConfiguration config = presetId switch
             {
                 "flat" => CreateFlatConfig(),
                 "bass_boost" => CreateBassBoostConfig(),
                 "treble_boost" => CreateTrebleBoostConfig(),
+                "voice_clarity" => CreateVoiceClarityConfig(),
+                "pop" => CreatePopConfig(),
+                "rock" => CreateRockConfig(),
+                "classical" => CreateClassicalConfig(),
+                "gaming" => CreateGamingConfig(),
+                "cinema" => CreateCinemaConfig(),
+                "podcast" => CreatePodcastConfig(),
                 _ => CreateFlatConfig()
             };
 
@@ -346,6 +410,139 @@ namespace StudioFeel
                 masterGainDb = 0,
                 sampleRate = 48000,
                 bands = bands
+            };
+        }
+
+        private IPC.EQConfiguration CreateVoiceClarityConfig()
+        {
+            // Boost presence (2-4kHz) and brightness (6kHz)
+            return new IPC.EQConfiguration
+            {
+                masterEnabled = true,
+                masterGainDb = 0,
+                sampleRate = 48000,
+                bands = Bands.Select((b, i) => new IPC.EQBandConfig
+                {
+                    enabled = true,
+                    type = IPC.FilterType.Peaking,
+                    frequency = (float)b.Frequency,
+                    Q = (float)b.Q,
+                    gainDb = (i == 5 || i == 6) ? 4.0f : 0.0f
+                }).ToList()
+            };
+        }
+
+        private IPC.EQConfiguration CreatePopConfig()
+        {
+            // Bass + slight upper-mid + treble boost
+            return new IPC.EQConfiguration
+            {
+                masterEnabled = true,
+                masterGainDb = 0,
+                sampleRate = 48000,
+                bands = Bands.Select((b, i) => new IPC.EQBandConfig
+                {
+                    enabled = true,
+                    type = IPC.FilterType.Peaking,
+                    frequency = (float)b.Frequency,
+                    Q = (float)b.Q,
+                    gainDb = (i < 2) ? 4.0f : (i == 5) ? 2.0f : (i >= 8) ? 3.0f : 0.0f
+                }).ToList()
+            };
+        }
+
+        private IPC.EQConfiguration CreateRockConfig()
+        {
+            // Punchy bass + mid presence
+            return new IPC.EQConfiguration
+            {
+                masterEnabled = true,
+                masterGainDb = 0,
+                sampleRate = 48000,
+                bands = Bands.Select((b, i) => new IPC.EQBandConfig
+                {
+                    enabled = true,
+                    type = IPC.FilterType.Peaking,
+                    frequency = (float)b.Frequency,
+                    Q = (float)b.Q,
+                    gainDb = (i == 0) ? 5.0f : (i == 3) ? -2.0f : (i == 5) ? 3.0f : (i >= 7) ? 2.0f : 0.0f
+                }).ToList()
+            };
+        }
+
+        private IPC.EQConfiguration CreateClassicalConfig()
+        {
+            // Subtle, balanced response
+            return new IPC.EQConfiguration
+            {
+                masterEnabled = true,
+                masterGainDb = 0,
+                sampleRate = 48000,
+                bands = Bands.Select((b, i) => new IPC.EQBandConfig
+                {
+                    enabled = true,
+                    type = IPC.FilterType.Peaking,
+                    frequency = (float)b.Frequency,
+                    Q = (float)b.Q,
+                    gainDb = (i == 0) ? 2.0f : (i == 4) ? 1.0f : (i >= 8) ? 2.0f : 0.0f
+                }).ToList()
+            };
+        }
+
+        private IPC.EQConfiguration CreateGamingConfig()
+        {
+            // Footsteps (2kHz) + detail (6kHz) + explosions
+            return new IPC.EQConfiguration
+            {
+                masterEnabled = true,
+                masterGainDb = 0,
+                sampleRate = 48000,
+                bands = Bands.Select((b, i) => new IPC.EQBandConfig
+                {
+                    enabled = true,
+                    type = IPC.FilterType.Peaking,
+                    frequency = (float)b.Frequency,
+                    Q = (float)b.Q,
+                    gainDb = (i == 0) ? 5.0f : (i == 5) ? 4.0f : (i >= 6) ? 3.0f : 0.0f
+                }).ToList()
+            };
+        }
+
+        private IPC.EQConfiguration CreateCinemaConfig()
+        {
+            // Deep bass + dialogue clarity
+            return new IPC.EQConfiguration
+            {
+                masterEnabled = true,
+                masterGainDb = 0,
+                sampleRate = 48000,
+                bands = Bands.Select((b, i) => new IPC.EQBandConfig
+                {
+                    enabled = true,
+                    type = i == 0 ? IPC.FilterType.LowShelf : IPC.FilterType.Peaking,
+                    frequency = (float)b.Frequency,
+                    Q = (float)b.Q,
+                    gainDb = (i == 0) ? 6.0f : (i == 5) ? 3.0f : 0.0f
+                }).ToList()
+            };
+        }
+
+        private IPC.EQConfiguration CreatePodcastConfig()
+        {
+            // Focus on speech (3kHz)
+            return new IPC.EQConfiguration
+            {
+                masterEnabled = true,
+                masterGainDb = 0,
+                sampleRate = 48000,
+                bands = Bands.Select((b, i) => new IPC.EQBandConfig
+                {
+                    enabled = true,
+                    type = IPC.FilterType.Peaking,
+                    frequency = (float)b.Frequency,
+                    Q = (float)b.Q,
+                    gainDb = (i == 5) ? 5.0f : (i == 1 || i == 2) ? -2.0f : 0.0f
+                }).ToList()
             };
         }
 

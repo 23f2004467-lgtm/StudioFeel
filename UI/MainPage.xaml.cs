@@ -4,6 +4,9 @@
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Shapes;
+using System;
+using System.Linq;
 
 namespace StudioFeel
 {
@@ -20,19 +23,55 @@ namespace StudioFeel
             ViewModel = new MainViewModel();
             DataContext = ViewModel;
 
-            // Initialize the visualizer
+            // Wire up the visualizer curve
+            ViewModel.EQCurve = EQCurve;
+
+            // Set the action that updates the curve
+            ViewModel.SetUpdateCurveAction(UpdateCurve);
+
+            // Subscribe to property changes to update curve
+            ViewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(MainViewModel.MasterGain))
+                {
+                    UpdateCurve();
+                }
+            };
+
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
+            SizeChanged += OnSizeChanged;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             ViewModel.Start();
+            UpdateCurve();
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
             ViewModel.Stop();
+        }
+
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.NewSize.Width > 0)
+            {
+                UpdateCurve();
+            }
+        }
+
+        private void UpdateCurve()
+        {
+            // Get the canvas actual width
+            if (FrequencyCurveCanvas != null && FrequencyCurveCanvas.ActualWidth > 0)
+            {
+                ViewModel.UpdateCurve(
+                    FrequencyCurveCanvas.ActualWidth,
+                    FrequencyCurveCanvas.ActualHeight
+                );
+            }
         }
     }
 }

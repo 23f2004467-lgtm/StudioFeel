@@ -15,7 +15,7 @@ namespace StudioFeel
     /// </summary>
     public partial class App : Application
     {
-        private Window? _window;
+        public static Window? MainWindow { get; private set; }
 
         public App()
         {
@@ -30,14 +30,14 @@ namespace StudioFeel
         /// </summary>
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            _window = new Window();
-            _window.Title = "StudioFeel";
+            MainWindow = new Window();
+            MainWindow.Title = "StudioFeel";
 
             // Create and navigate to the main page
-            _window.Content = new Frame();
-            ((Frame)_window.Content).Navigate(typeof(MainPage));
+            MainWindow.Content = new Frame();
+            ((Frame)MainWindow.Content).Navigate(typeof(MainPage));
 
-            _window.Activate();
+            MainWindow.Activate();
         }
 
         private void OnActivated(object? sender, AppActivatedEventArgs e)
@@ -49,8 +49,8 @@ namespace StudioFeel
                 // TODO: Import the preset file
             }
 
-            _window ??= new Window();
-            _window.Activate();
+            MainWindow ??= new Window();
+            MainWindow.Activate();
         }
     }
 }
