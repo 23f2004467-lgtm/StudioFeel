@@ -91,11 +91,23 @@ std::string SerializeConfiguration(const EQConfiguration& config) {
 
 namespace {
 
+// Security limits to prevent DoS attacks via malicious JSON
+constexpr size_t MAX_JSON_INPUT_SIZE = 65536;      // 64KB max input
+constexpr size_t MAX_JSON_NESTING_DEPTH = 16;      // Max nesting depth
+constexpr size_t MAX_JSON_STRING_LENGTH = 512;     // Max string length
+
 class JsonParser {
 public:
-    explicit JsonParser(const std::string& input) : m_input(input), m_pos(0) {}
+    explicit JsonParser(const std::string& input) : m_input(input), m_pos(0), m_depth(0) {
+        // Validate input size immediately
+        if (m_input.size() > MAX_JSON_INPUT_SIZE) {
+            m_error = "JSON input too large";
+        }
+    }
 
     bool ParseConfiguration(EQConfiguration& outConfig) {
+        if (!m_error.empty()) return false;  // Early exit if size check failed
+
         SkipWhitespace();
         if (!Expect('{')) return false;
 
@@ -148,26 +160,47 @@ public:
 
 private:
     bool ParseBandsArray(std::vector<EQBandConfig>& outBands) {
+        if (!CheckDepth()) return false;
+        m_depth++;
+
         if (!Expect('[')) return false;
         outBands.clear();
 
         SkipWhitespace();
-        if (Peek() == ']') { Advance(); return true; }
+        if (Peek() == ']') { Advance(); m_depth--; return true; }
+
+        size_t bandCount = 0;
+        constexpr size_t MAX_BANDS = 32;  // Sanity check
 
         while (m_pos < m_input.size()) {
+            if (bandCount >= MAX_BANDS) {
+                m_error = "Too many bands";
+                m_depth--;
+                return false;
+            }
+
             EQBandConfig band;
-            if (!ParseBandObject(band)) return false;
+            if (!ParseBandObject(band)) {
+                m_depth--;
+                return false;
+            }
             outBands.push_back(band);
+            bandCount++;
 
             SkipWhitespace();
-            if (Peek() == ']') { Advance(); return true; }
+            if (Peek() == ']') { Advance(); m_depth--; return true; }
             if (!Expect(',')) return false;
             SkipWhitespace();
         }
+
+        m_depth--;
         return false;
     }
 
     bool ParseBandObject(EQBandConfig& outBand) {
+        if (!CheckDepth()) return false;
+        m_depth++;
+
         SkipWhitespace();
         if (!Expect('{')) return false;
 
@@ -175,10 +208,13 @@ private:
 
         while (m_pos < m_input.size()) {
             SkipWhitespace();
-            if (Peek() == '}') { Advance(); return true; }
+            if (Peek() == '}') { Advance(); m_depth--; return true; }
 
             std::string key;
-            if (!ParseString(key)) return false;
+            if (!ParseString(key)) {
+                m_depth--;
+                return false;
+            }
             SkipWhitespace();
             if (!Expect(':')) return false;
             SkipWhitespace();
@@ -224,6 +260,12 @@ private:
         out.clear();
 
         while (m_pos < m_input.size()) {
+            // Prevent unbounded string growth (DoS protection)
+            if (out.length() >= MAX_JSON_STRING_LENGTH) {
+                m_error = "String too long";
+                return false;
+            }
+
             char c = m_input[m_pos++];
             if (c == '"') return true;
             if (c == '\\' && m_pos < m_input.size()) {
@@ -305,8 +347,12 @@ private:
 
     bool SkipObject() {
         if (!Expect('{')) return false;
+        if (!CheckDepth()) return false;
+
         int depth = 1;
-        while (m_pos < m_input.size() && depth > 0) {
+        constexpr int MAX_SKIP_DEPTH = 32;  // Hard limit for skip
+
+        while (m_pos < m_input.size() && depth > 0 && depth < MAX_SKIP_DEPTH) {
             if (m_input[m_pos] == '{') depth++;
             if (m_input[m_pos] == '}') depth--;
             if (m_input[m_pos] == '"') {
@@ -323,8 +369,12 @@ private:
 
     bool SkipArray() {
         if (!Expect('[')) return false;
+        if (!CheckDepth()) return false;
+
         int depth = 1;
-        while (m_pos < m_input.size() && depth > 0) {
+        constexpr int MAX_SKIP_DEPTH = 32;  // Hard limit for skip
+
+        while (m_pos < m_input.size() && depth > 0 && depth < MAX_SKIP_DEPTH) {
             if (m_input[m_pos] == '[') depth++;
             if (m_input[m_pos] == ']') depth--;
             if (m_input[m_pos] == '"') {
@@ -358,8 +408,15 @@ private:
         return false;
     }
 
+    // Check nesting depth to prevent stack overflow attacks
+    bool CheckDepth() const {
+        return m_depth < MAX_JSON_NESTING_DEPTH;
+    }
+
     const std::string& m_input;
     size_t m_pos;
+    size_t m_depth;           // Current nesting depth
+    std::string m_error;       // Error message storage
 };
 
 } // anonymous namespace

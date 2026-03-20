@@ -10,6 +10,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <sddl.h>
 #include <sstream>
 #include <thread>
 #include <chrono>
@@ -32,6 +33,45 @@ std::string NamedPipeIPC::MakePipeName(const std::string& endpointId) {
     }
     return "\\\\.\\pipe\\StudioFeel_" + safeId;
 }
+
+#ifdef _WIN32
+// ============================================================================
+// Security Descriptor Helper
+// ============================================================================
+
+// Create a security descriptor that only allows the creating user
+// and administrators to connect to the pipe. This prevents malicious
+// applications from sending commands to the APO.
+static SECURITY_ATTRIBUTES* CreateSecurePipeSA() {
+    static SECURITY_ATTRIBUTES sa = {};
+    static bool initialized = false;
+
+    if (initialized) {
+        return &sa;
+    }
+
+    // Security Descriptor Definition Language (SDDL) string:
+    // D:       - DACL (discretionary access control list)
+    // (A;;GA;;;BA) - Allow GenericAll to Built-in Administrators
+    // (A;;GA;;;SY) - Allow GenericAll to SYSTEM
+    // (A;;GWGR;;;BU) - Allow GenericWrite/GenericRead to Built-in Users (limited access)
+    // NO_ACCESS_CONTROLS - No SACL (system access control list)
+    const char* sddl = "D:P(A;;GA;;;BA)(A;;GA;;;SY)(A;;GWGR;;;BU)";
+
+    SECURITY_DESCRIPTOR* sd = nullptr;
+    if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
+            sddl, SDDL_REVISION_1, reinterpret_cast<PSECURITY_DESCRIPTOR*>(&sd), nullptr)) {
+        return nullptr;
+    }
+
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = sd;
+    sa.bInheritHandle = FALSE;
+
+    initialized = true;
+    return &sa;
+}
+#endif
 
 // ============================================================================
 // NamedPipeIPC — Client Side (UI App)
@@ -366,9 +406,10 @@ void NamedPipeServer::BroadcastParameterChange(const std::string& key, const std
 void NamedPipeServer::AcceptLoop() {
 #ifdef _WIN32
     std::string pipeName = NamedPipeIPC::MakePipeName(m_endpointId);
+    SECURITY_ATTRIBUTES* sa = CreateSecurePipeSA();
 
     while (m_running.load()) {
-        // Create the named pipe
+        // Create the named pipe with secure security attributes
         HANDLE hPipe = CreateNamedPipeA(
             pipeName.c_str(),
             PIPE_ACCESS_DUPLEX,         // Read/write access
@@ -379,7 +420,7 @@ void NamedPipeServer::AcceptLoop() {
             MAX_PIPE_PAYLOAD,           // Output buffer size
             MAX_PIPE_PAYLOAD,           // Input buffer size
             0,                          // Default timeout
-            nullptr                     // Default security
+            sa                          // Secure security descriptor
         );
 
         if (hPipe == INVALID_HANDLE_VALUE) {
