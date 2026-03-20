@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ============================================================================
+  StudioFeel — WinUI 3 Companion App Manifest
+  ============================================================================
+  MSIX package manifest for the StudioFeel companion app, distributed
+  via the Microsoft Store using the Hardware Support App (HSA) model.
+
+  Key capabilities:
+    - audioDeviceConfiguration: Access APO property stores (CAPX)
+    - internetClient: For updates and telemetry (optional)
+  ============================================================================
+-->
+<Package
+    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+    xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+    xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+    xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+    xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+    xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+    IgnorableNamespaces="uap uap3 uap5 rescap desktop mp">
+
+    <!-- ================================================================== -->
+    <!-- Package Identity                                                    -->
+    <!-- ================================================================== -->
+    <!-- Publisher CN must match your Store developer certificate.            -->
+    <!-- Package Family Name is auto-generated from Name + Publisher hash.   -->
+    <Identity
+        Name="StudioFeelInc.StudioFeel"
+        Publisher="CN=StudioFeel Inc., O=StudioFeel Inc., L=San Francisco, S=California, C=US"
+        Version="1.0.0.0"
+        ProcessorArchitecture="x64" />
+
+    <!-- ================================================================== -->
+    <!-- Package Properties                                                  -->
+    <!-- ================================================================== -->
+    <Properties>
+        <DisplayName>StudioFeel</DisplayName>
+        <PublisherDisplayName>StudioFeel Inc.</PublisherDisplayName>
+        <Logo>Assets\StoreLogo.png</Logo>
+        <Description>System-wide audio equalizer for Windows. Professional parametric EQ with presets, per-device settings, and real-time visualization.</Description>
+    </Properties>
+
+    <!-- ================================================================== -->
+    <!-- Dependencies                                                        -->
+    <!-- ================================================================== -->
+    <Dependencies>
+        <TargetDeviceFamily
+            Name="Windows.Desktop"
+            MinVersion="10.0.19041.0"
+            MaxVersionTested="10.0.26100.0" />
+
+        <!-- Windows App SDK / WinUI 3 framework dependency -->
+        <PackageDependency
+            Name="Microsoft.WindowsAppRuntime.1.6"
+            MinVersion="6000.311.2105.0"
+            Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
+    </Dependencies>
+
+    <!-- ================================================================== -->
+    <!-- Resources                                                           -->
+    <!-- ================================================================== -->
+    <Resources>
+        <Resource Language="en-us" />
+    </Resources>
+
+    <!-- ================================================================== -->
+    <!-- Application Definition                                              -->
+    <!-- ================================================================== -->
+    <Applications>
+        <Application
+            Id="App"
+            Executable="StudioFeel.App.exe"
+            EntryPoint="$targetentrypoint$">
+
+            <uap:VisualElements
+                DisplayName="StudioFeel"
+                Description="System-wide audio equalizer"
+                Square150x150Logo="Assets\Square150x150Logo.png"
+                Square44x44Logo="Assets\Square44x44Logo.png"
+                BackgroundColor="transparent">
+
+                <uap:DefaultTile
+                    Wide310x150Logo="Assets\Wide310x150Logo.png"
+                    Square310x310Logo="Assets\Square310x310Logo.png"
+                    Square71x71Logo="Assets\SmallTile.png"
+                    ShortName="StudioFeel">
+                    <uap:ShowNameOnTiles>
+                        <uap:ShowOn Tile="square150x150Logo" />
+                        <uap:ShowOn Tile="wide310x150Logo" />
+                        <uap:ShowOn Tile="square310x310Logo" />
+                    </uap:ShowNameOnTiles>
+                </uap:DefaultTile>
+
+                <uap:SplashScreen Image="Assets\SplashScreen.png" />
+            </uap:VisualElements>
+
+            <!-- File type association for .studiofeel preset files -->
+            <Extensions>
+                <uap:Extension Category="windows.fileTypeAssociation">
+                    <uap:FileTypeAssociation Name="studiofeel-preset">
+                        <uap:SupportedFileTypes>
+                            <uap:FileType>.studiofeel</uap:FileType>
+                        </uap:SupportedFileTypes>
+                        <uap:DisplayName>StudioFeel Preset</uap:DisplayName>
+                        <uap:Logo>Assets\PresetIcon.png</uap:Logo>
+                    </uap:FileTypeAssociation>
+                </uap:Extension>
+
+                <!-- Startup task: auto-launch on login (optional, user-controlled) -->
+                <desktop:Extension Category="windows.startupTask">
+                    <desktop:StartupTask
+                        TaskId="StudioFeelStartup"
+                        Enabled="false"
+                        DisplayName="StudioFeel System Equalizer" />
+                </desktop:Extension>
+            </Extensions>
+        </Application>
+    </Applications>
+
+    <!-- ================================================================== -->
+    <!-- Capabilities                                                        -->
+    <!-- ================================================================== -->
+    <Capabilities>
+        <!-- Standard capability: internet access for updates -->
+        <Capability Name="internetClient" />
+
+        <!-- Restricted: Access audio device property stores (CAPX framework) -->
+        <!-- Required for HSA communication with the APO driver -->
+        <rescap:Capability Name="audioDeviceConfiguration" />
+    </Capabilities>
+
+    <!-- ================================================================== -->
+    <!-- HSA Hardware Support Declaration                                     -->
+    <!-- ================================================================== -->
+    <!-- Associates this Store app with the StudioFeel APO driver package.   -->
+    <!-- Windows installs the app when the driver is present on the system.  -->
+    <Extensions>
+        <uap5:Extension Category="windows.hardwareSupport">
+            <uap5:HardwareSupport>
+                <uap5:SoftwareComponent
+                    Name="StudioFeel.APO"
+                    Version="1.0.0.0">
+                    <uap5:DriverDependency>
+                        <uap5:DriverConstraint
+                            InfId="StudioFeel"
+                            MinVersion="1.0.0.0"
+                            MinDate="2026-03-20" />
+                    </uap5:DriverDependency>
+                </uap5:SoftwareComponent>
+            </uap5:HardwareSupport>
+        </uap5:Extension>
+    </Extensions>
+</Package>

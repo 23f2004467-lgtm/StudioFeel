@@ -1,0 +1,124 @@
+; =============================================================================
+; StudioFeel System Equalizer — APO Driver INF
+; =============================================================================
+; DCH-compliant driver package for StudioFeel Audio Processing Object.
+; Registers the EFX APO with the Windows Audio Engine and associates it
+; with the StudioFeel companion app on the Microsoft Store (HSA model).
+;
+; IMPORTANT: All APO registry entries MUST go to HKCR, not HKR.
+;            If placed under HKR, the APO will NOT be discovered by audiodg.exe.
+; =============================================================================
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = SoftwareComponent
+ClassGuid   = {5c4c3332-344d-483c-8739-259e934c9cc8}
+Provider    = %ManufacturerName%
+DriverVer   = 03/20/2026,1.0.0.0
+CatalogFile = StudioFeel.cat
+PnpLockDown = 1
+
+; =============================================================================
+; Manufacturer & Models
+; =============================================================================
+
+[Manufacturer]
+%ManufacturerName% = StudioFeel, NTamd64, NTarm64
+
+[StudioFeel.NTamd64]
+%StudioFeel.DeviceDesc% = StudioFeel_Install, SWC\VEN_STUDIOFEEL&PROD_EQ&REV_0001
+
+[StudioFeel.NTarm64]
+%StudioFeel.DeviceDesc% = StudioFeel_Install, SWC\VEN_STUDIOFEEL&PROD_EQ&REV_0001
+
+; =============================================================================
+; Install Section
+; =============================================================================
+
+[StudioFeel_Install]
+CopyFiles = APO_CopyFiles
+
+[StudioFeel_Install.Services]
+AddService = , 2    ; No service — APO is loaded by audiodg.exe
+
+; =============================================================================
+; File Copy
+; =============================================================================
+
+[APO_CopyFiles]
+StudioFeel.APO.dll
+
+[SourceDisksFiles]
+StudioFeel.APO.dll = 1
+
+[SourceDisksNames]
+1 = %DiskName%
+
+[DestinationDirs]
+APO_CopyFiles = 11  ; %SystemRoot%\System32
+
+; =============================================================================
+; Registry — COM Registration (HKCR)
+; =============================================================================
+; These entries register the APO as a COM object so audiodg.exe can load it.
+; =============================================================================
+
+[StudioFeel_Install.HW]
+AddReg = StudioFeel.COM.AddReg
+AddReg = StudioFeel.APO.AddReg
+AddReg = StudioFeel.FxProperties.AddReg
+AddReg = StudioFeel.HSA.AddReg
+
+; --- COM InprocServer32 registration ---
+[StudioFeel.COM.AddReg]
+; EFX APO CLSID
+HKCR, "CLSID\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}",, , "StudioFeel EFX APO"
+HKCR, "CLSID\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}\InprocServer32",, , "%11%\StudioFeel.APO.dll"
+HKCR, "CLSID\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}\InprocServer32", "ThreadingModel",, "Both"
+
+; Property Store CLSID
+HKCR, "CLSID\{3CEE3D8C-91A0-4B8A-9AC6-0F30DDF11923}",, , "StudioFeel Property Store"
+HKCR, "CLSID\{3CEE3D8C-91A0-4B8A-9AC6-0F30DDF11923}\InprocServer32",, , "%11%\StudioFeel.APO.dll"
+HKCR, "CLSID\{3CEE3D8C-91A0-4B8A-9AC6-0F30DDF11923}\InprocServer32", "ThreadingModel",, "Both"
+
+; --- APO Registration with Windows Audio Engine ---
+[StudioFeel.APO.AddReg]
+; Register in the AudioProcessingObjects key so Windows discovers the APO
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}",, , ""
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "FriendlyName",, "StudioFeel System Equalizer"
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "Copyright",, "Copyright (c) StudioFeel Inc."
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "MajorVersion", 0x00010001, 1
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "MinorVersion", 0x00010001, 0
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "Flags", 0x00010001, 0x0000000D
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "MinInputConnections", 0x00010001, 1
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "MaxInputConnections", 0x00010001, 1
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "MinOutputConnections", 0x00010001, 1
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "MaxOutputConnections", 0x00010001, 1
+HKCR, "AudioEngine\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "MaxInstances", 0x00010001, 0
+
+; --- FX Properties (CAPX Default Store) ---
+; These are the default EQ settings, populated when the driver is installed.
+; The HSA app can modify User and Volatile substores at runtime.
+[StudioFeel.FxProperties.AddReg]
+HKR, "FxProperties", "{E6459A10-48D8-4098-9BD0-9FEB6820BA3B},1",, "true"     ; Master enabled
+HKR, "FxProperties", "{E6459A10-48D8-4098-9BD0-9FEB6820BA3B},2",, "0.0"      ; Master gain (dB)
+HKR, "FxProperties", "{E6459A10-48D8-4098-9BD0-9FEB6820BA3B},3",, "0"        ; Band count (0 = flat)
+
+; --- EFX CLSID assignment (tells Windows which APO to use for endpoint effects) ---
+HKR, "FxProperties", "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},5",, "{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}"
+
+; --- HSA Companion App Association ---
+[StudioFeel.HSA.AddReg]
+; Link this driver to the StudioFeel companion app on the Microsoft Store.
+; Replace the Package Family Name with the actual PFN from your Store submission.
+HKR, "SoftwareComponents", "StudioFeel.App",, ""
+HKLM, "SOFTWARE\Microsoft\Windows\CurrentVersion\Audio\AudioProcessingObjects\{94B389EF-333E-4865-B0FC-0ABA99BCC7E9}", "AppPackageFamilyName",, "StudioFeelInc.StudioFeel_9zz4h110yvjzm"
+
+; =============================================================================
+; Strings
+; =============================================================================
+
+[Strings]
+ManufacturerName    = "StudioFeel Inc."
+DiskName            = "StudioFeel Audio Equalizer Driver Disk"
+StudioFeel.DeviceDesc = "StudioFeel System Equalizer"

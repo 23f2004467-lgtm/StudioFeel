@@ -1,0 +1,406 @@
+{
+  "version": "1.0",
+  "presets": [
+    {
+      "id": "flat",
+      "name": "Flat",
+      "description": "No EQ applied — pure passthrough",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": []
+      }
+    },
+    {
+      "id": "bass_boost",
+      "name": "Bass Boost",
+      "description": "Enhanced low frequencies for fuller sound",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "lowshelf",
+            "frequencyHz": 100.0,
+            "Q": 0.707,
+            "gainDb": 6.0,
+            "enabled": true,
+            "label": "Bass Shelf"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 60.0,
+            "Q": 1.2,
+            "gainDb": 3.0,
+            "enabled": true,
+            "label": "Sub Bass"
+          }
+        ]
+      }
+    },
+    {
+      "id": "treble_boost",
+      "name": "Treble Boost",
+      "description": "Enhanced high frequencies for clarity and sparkle",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "highshelf",
+            "frequencyHz": 8000.0,
+            "Q": 0.707,
+            "gainDb": 5.0,
+            "enabled": true,
+            "label": "Treble Shelf"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 12000.0,
+            "Q": 1.0,
+            "gainDb": 2.0,
+            "enabled": true,
+            "label": "Air"
+          }
+        ]
+      }
+    },
+    {
+      "id": "voice_clarity",
+      "name": "Voice Clarity",
+      "description": "Optimized for speech, podcasts, and vocals",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "highpass",
+            "frequencyHz": 80.0,
+            "Q": 0.707,
+            "gainDb": 0.0,
+            "enabled": true,
+            "label": "Rumble Cut"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 200.0,
+            "Q": 1.0,
+            "gainDb": -3.0,
+            "enabled": true,
+            "label": "Mud Reduction"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 3000.0,
+            "Q": 2.0,
+            "gainDb": 4.0,
+            "enabled": true,
+            "label": "Presence"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 6000.0,
+            "Q": 1.5,
+            "gainDb": 3.0,
+            "enabled": true,
+            "label": "Brightness"
+          }
+        ]
+      }
+    },
+    {
+      "id": "music_pop",
+      "name": "Pop Music",
+      "description": "Balanced boost for modern pop and electronic music",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "lowshelf",
+            "frequencyHz": 80.0,
+            "Q": 0.707,
+            "gainDb": 4.0,
+            "enabled": true,
+            "label": "Bass"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 250.0,
+            "Q": 1.0,
+            "gainDb": -2.0,
+            "enabled": true,
+            "label": "Warmth"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 2500.0,
+            "Q": 1.5,
+            "gainDb": 2.0,
+            "enabled": true,
+            "label": "Vocal Presence"
+          },
+          {
+            "type": "highshelf",
+            "frequencyHz": 10000.0,
+            "Q": 0.707,
+            "gainDb": 3.0,
+            "enabled": true,
+            "label": "Brilliance"
+          }
+        ]
+      }
+    },
+    {
+      "id": "music_rock",
+      "name": "Rock Music",
+      "description": "Punchy mids and powerful low end for rock and metal",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "peaking",
+            "frequencyHz": 60.0,
+            "Q": 1.0,
+            "gainDb": 5.0,
+            "enabled": true,
+            "label": "Kick Drum"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 400.0,
+            "Q": 1.2,
+            "gainDb": -2.0,
+            "enabled": true,
+            "label": "Box Reduction"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 1500.0,
+            "Q": 1.5,
+            "gainDb": 3.0,
+            "enabled": true,
+            "label": "Guitar Bite"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 4000.0,
+            "Q": 1.0,
+            "gainDb": 2.0,
+            "enabled": true,
+            "label": "Attack"
+          },
+          {
+            "type": "highshelf",
+            "frequencyHz": 12000.0,
+            "Q": 0.707,
+            "gainDb": 2.0,
+            "enabled": true,
+            "label": "Cymbal Shimmer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "music_classical",
+      "name": "Classical Music",
+      "description": "Natural, wide soundstage for orchestral and acoustic music",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "lowshelf",
+            "frequencyHz": 60.0,
+            "Q": 0.707,
+            "gainDb": 2.0,
+            "enabled": true,
+            "label": "Depth"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 500.0,
+            "Q": 0.8,
+            "gainDb": 1.0,
+            "enabled": true,
+            "label": "Body"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 2000.0,
+            "Q": 1.0,
+            "gainDb": -1.0,
+            "enabled": true,
+            "label": "Smoothness"
+          },
+          {
+            "type": "highshelf",
+            "frequencyHz": 8000.0,
+            "Q": 0.707,
+            "gainDb": 2.0,
+            "enabled": true,
+            "label": "Air"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gaming",
+      "name": "Gaming",
+      "description": "Enhanced spatial awareness with boosted footsteps and explosions",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "peaking",
+            "frequencyHz": 50.0,
+            "Q": 1.0,
+            "gainDb": 5.0,
+            "enabled": true,
+            "label": "Explosions"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 500.0,
+            "Q": 1.0,
+            "gainDb": -2.0,
+            "enabled": true,
+            "label": "Dialogue Clarity"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 2000.0,
+            "Q": 2.0,
+            "gainDb": 4.0,
+            "enabled": true,
+            "label": "Footsteps"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 6000.0,
+            "Q": 1.5,
+            "gainDb": 3.0,
+            "enabled": true,
+            "label": "Detail"
+          },
+          {
+            "type": "highshelf",
+            "frequencyHz": 10000.0,
+            "Q": 0.707,
+            "gainDb": 2.0,
+            "enabled": true,
+            "label": "Spatial Cues"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cinema",
+      "name": "Cinema",
+      "description": "Theater-like experience with deep bass and clear dialogue",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "lowshelf",
+            "frequencyHz": 80.0,
+            "Q": 0.707,
+            "gainDb": 6.0,
+            "enabled": true,
+            "label": "Theater Bass"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 300.0,
+            "Q": 0.8,
+            "gainDb": -1.0,
+            "enabled": true,
+            "label": "Clarity"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 2500.0,
+            "Q": 1.5,
+            "gainDb": 3.0,
+            "enabled": true,
+            "label": "Dialogue"
+          },
+          {
+            "type": "highshelf",
+            "frequencyHz": 12000.0,
+            "Q": 0.707,
+            "gainDb": 1.0,
+            "enabled": true,
+            "label": "Ambience"
+          }
+        ]
+      }
+    },
+    {
+      "id": "podcast",
+      "name": "Podcast",
+      "description": "Focused on speech intelligibility with reduced background noise emphasis",
+      "category": "factory",
+      "eqConfig": {
+        "masterEnabled": true,
+        "masterGainDb": 0.0,
+        "sampleRate": 48000,
+        "bands": [
+          {
+            "type": "highpass",
+            "frequencyHz": 120.0,
+            "Q": 0.707,
+            "gainDb": 0.0,
+            "enabled": true,
+            "label": "Rumble Cut"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 250.0,
+            "Q": 1.2,
+            "gainDb": -3.0,
+            "enabled": true,
+            "label": "Mud Cut"
+          },
+          {
+            "type": "peaking",
+            "frequencyHz": 3500.0,
+            "Q": 1.5,
+            "gainDb": 5.0,
+            "enabled": true,
+            "label": "Speech Presence"
+          },
+          {
+            "type": "lowpass",
+            "frequencyHz": 14000.0,
+            "Q": 0.707,
+            "gainDb": 0.0,
+            "enabled": true,
+            "label": "Hiss Reduction"
+          }
+        ]
+      }
+    }
+  ]
+}
